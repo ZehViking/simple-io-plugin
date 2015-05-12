@@ -22,7 +22,7 @@ unsigned int safe_read(int desc, void *ptr, size_t len) {
 
 #ifdef EINTR
   do {
-    n_chars = read(desc, ptr, len);
+    n_chars = _read(desc, ptr, len);
   } while (n_chars < 0 && errno == EINTR);
 #else
   n_chars = read(desc, ptr, len);
@@ -35,6 +35,7 @@ unsigned int safe_read(int desc, void *ptr, size_t len) {
 TxtFileStream::TxtFileStream() :
   file_handle_(-1),
   delegate_(nullptr),
+  skip_to_end_(false),
   listening_(false) {
 }
 
@@ -46,7 +47,8 @@ TxtFileStream::~TxtFileStream() {
 
 bool TxtFileStream::Initialize(
   const wchar_t* filename, 
-  TxtFileStreamDelegate* delegate) {
+  TxtFileStreamDelegate* delegate,
+  bool skip_to_end) {
 
   if ((nullptr == filename) || (nullptr == delegate)) {
     return false;
@@ -66,6 +68,8 @@ bool TxtFileStream::Initialize(
 
   delegate_ = delegate;
 
+  skip_to_end_ = skip_to_end;
+
   accumulated_line_.clear();
 
   {
@@ -79,6 +83,18 @@ bool TxtFileStream::Initialize(
 bool TxtFileStream::StartListening() {
   if (listening_) {
     return false;
+  }
+
+  // skip read pointer to end
+  if (skip_to_end_) {
+    {
+      CriticalSectionLock lock(critical_section_);
+      if (-1 == file_handle_) {
+        return false;
+      }
+
+      lseek(file_handle_, 0, SEEK_END);
+    }
   }
 
   int buffer_size = kBufferSize;

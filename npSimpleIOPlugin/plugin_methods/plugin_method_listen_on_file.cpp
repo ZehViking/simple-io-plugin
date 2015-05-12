@@ -6,7 +6,7 @@
 
 const char kListenOnFileMethodName[] = "listenOnFile";
 
-// listenOnFile( filename, callback(status, data) )
+// listenOnFile( filename, skipToEnd, callback(status, data) )
 PluginMethodListenOnFile::PluginMethodListenOnFile(NPObject* object, NPP npp) :
   PluginMethod(object, npp) {
 }
@@ -77,20 +77,23 @@ bool PluginMethodListenOnFile::Execute(
   NPVariant *result) {
 
   std::string filename;
+  bool skip_to_end = false;
 
   try {
-    if (argCount < 2 ||
+    if (argCount < 3 ||
       !NPVARIANT_IS_STRING(args[0]) ||
-      !NPVARIANT_IS_OBJECT(args[1])) {
+      !NPVARIANT_IS_BOOLEAN(args[1]) ||
+      !NPVARIANT_IS_OBJECT(args[2])) {
       NPN_SetException(
         __super::object_, 
-        "invalid or missing params passed to function - expecting 2 params: "
-        "filename, callback(status, data)");
+        "invalid or missing params passed to function - expecting 3 params: "
+        "filename, skipToEnd, callback(status, data)");
       return false;
     }
 
-    callback_ = NPVARIANT_TO_OBJECT(args[1]);
-    
+    callback_ = NPVARIANT_TO_OBJECT(args[2]);
+    skip_to_end = NPVARIANT_TO_BOOLEAN(args[1]);
+
     // add ref count to callback object so it won't delete
     NPN_RetainObject(callback_);
 
@@ -113,7 +116,7 @@ bool PluginMethodListenOnFile::Execute(
 
   std::wstring wide_filename = utils::Encoders::utf8_decode(filename);
 
-  if (!file_stream_.Initialize(wide_filename.c_str(), this)) {
+  if (!file_stream_.Initialize(wide_filename.c_str(), this, skip_to_end)) {
     NPN_SetException(
       __super::object_,
       "an unexpected error occurred - couldn't open the file for read access");

@@ -25,7 +25,8 @@ public:
 public:
   bool Initialize(
     const wchar_t* filename, 
-    TxtFileStreamDelegate* delegate);
+    TxtFileStreamDelegate* delegate,
+    bool skip_to_end = false);
   
   bool StartListening();
   bool StopListening();
@@ -35,6 +36,7 @@ private:
 
 private:
   int file_handle_;
+  bool skip_to_end_;
   TxtFileStreamDelegate* delegate_;
   std::string accumulated_line_;
 
