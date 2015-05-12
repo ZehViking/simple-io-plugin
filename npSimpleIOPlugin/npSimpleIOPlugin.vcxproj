@@ -58,7 +58,7 @@
       <Optimization>MaxSpeed</Optimization>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <WarningLevel>Level3</WarningLevel>
-      <AdditionalIncludeDirectories>..\xulrunner-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\xulrunner-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;MOZILLA_STRICT_API;XP_WIN;WIN32;_WINDOWS;_USRDLL;npSimpleIOPlugin_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\Release\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>.\Release\npSimpleIOPlugin.pch</PrecompiledHeaderOutputFile>
@@ -100,7 +100,7 @@
       <WarningLevel>Level3</WarningLevel>
       <MinimalRebuild>true</MinimalRebuild>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <AdditionalIncludeDirectories>..\xulrunner-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\xulrunner-sdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;MOZILLA_STRICT_API;XP_WIN;WIN32;_WINDOWS;_USRDLL;npSimpleIOPlugin_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AssemblerListingLocation>.\Debug\</AssemblerListingLocation>
       <PrecompiledHeaderOutputFile>.\Debug\npSimpleIOPlugin.pch</PrecompiledHeaderOutputFile>
@@ -143,16 +143,19 @@
     <ClCompile Include="plugin_common\npn_gate.cpp" />
     <ClCompile Include="plugin_common\npp_gate.cpp" />
     <ClCompile Include="plugin_common\np_entry.cpp" />
-    <ClCompile Include="plugin_method.cpp" />
-    <ClCompile Include="plugin_method_file_exists.cpp" />
-    <ClCompile Include="plugin_method_get_binary_file.cpp" />
-    <ClCompile Include="plugin_method_get_file_times.cpp" />
-    <ClCompile Include="plugin_method_get_text_file.cpp" />
-    <ClCompile Include="plugin_method_is_directory.cpp" />
+    <ClCompile Include="plugin_methods\plugin_method.cpp" />
+    <ClCompile Include="plugin_methods\plugin_method_file_exists.cpp" />
+    <ClCompile Include="plugin_methods\plugin_method_get_binary_file.cpp" />
+    <ClCompile Include="plugin_methods\plugin_method_get_file_times.cpp" />
+    <ClCompile Include="plugin_methods\plugin_method_get_text_file.cpp" />
+    <ClCompile Include="plugin_methods\plugin_method_is_directory.cpp" />
+    <ClCompile Include="plugin_methods\plugin_method_listen_on_file.cpp" />
     <ClCompile Include="utils\CriticalSectionLock.cpp" />
     <ClCompile Include="utils\Encoders.cpp" />
+    <ClCompile Include="utils\Event.cpp" />
     <ClCompile Include="utils\File.cpp" />
     <ClCompile Include="utils\Thread.cpp" />
+    <ClCompile Include="utils\TxtFileStream.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="npSimpleIOPlugin.def" />
@@ -165,17 +168,21 @@
     <ClInclude Include="nsScriptableObjectSimpleIO.h" />
     <ClInclude Include="nsPluginInstanceSimpleIO.h" />
     <ClInclude Include="plugin_common\pluginbase.h" />
-    <ClInclude Include="plugin_method.h" />
-    <ClInclude Include="plugin_method_file_exists.h" />
-    <ClInclude Include="plugin_method_get_binary_file.h" />
-    <ClInclude Include="plugin_method_get_file_times.h" />
-    <ClInclude Include="plugin_method_get_text_file.h" />
-    <ClInclude Include="plugin_method_is_directory.h" />
+    <ClInclude Include="plugin_methods\plugin_method.h" />
+    <ClInclude Include="plugin_methods\plugin_method_file_exists.h" />
+    <ClInclude Include="plugin_methods\plugin_method_get_binary_file.h" />
+    <ClInclude Include="plugin_methods\plugin_method_get_file_times.h" />
+    <ClInclude Include="plugin_methods\plugin_method_get_text_file.h" />
+    <ClInclude Include="plugin_methods\plugin_method_is_directory.h" />
+    <ClInclude Include="plugin_methods\plugin_method_listen_on_file.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="utils\CriticalSectionLock.h" />
     <ClInclude Include="utils\Encoders.h" />
+    <ClInclude Include="utils\Event.h" />
     <ClInclude Include="utils\File.h" />
+    <ClInclude Include="utils\ScopedHandle.h" />
     <ClInclude Include="utils\Thread.h" />
+    <ClInclude Include="utils\TxtFileStream.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

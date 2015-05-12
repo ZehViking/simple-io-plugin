@@ -13,6 +13,7 @@ class Thread; // forward declaration
 }
 
 class PluginMethod;
+class PluginMethodListenOnFile;
 
 class nsScriptableObjectSimpleIO : public nsScriptableObjectBase {
 public:
@@ -54,6 +55,9 @@ private:
   // this allows us to run our code on a separate thread than the 
   // main browser thread - to be more responsive
   std::auto_ptr<utils::Thread> thread_;
+
+  // listenOnFile method (a little hacky)
+  std::auto_ptr<PluginMethodListenOnFile> listen_on_file_method_;
 };
 
 // declare our NPObject-derived scriptable object class

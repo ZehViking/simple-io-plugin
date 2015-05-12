@@ -5,12 +5,15 @@
 #include "nsScriptableObjectSimpleIO.h"
 #include "utils/Thread.h"
 #include "utils/File.h"
+#include "utils/TxtFileStream.h"
 
-#include "plugin_method.h"
-#include "plugin_method_file_exists.h"
-#include "plugin_method_is_directory.h"
-#include "plugin_method_get_text_file.h"
-#include "plugin_method_get_binary_file.h"
+#include "plugin_methods/plugin_method.h"
+#include "plugin_methods/plugin_method_file_exists.h"
+#include "plugin_methods/plugin_method_is_directory.h"
+#include "plugin_methods/plugin_method_get_text_file.h"
+#include "plugin_methods/plugin_method_get_binary_file.h"
+
+#include "plugin_methods/plugin_method_listen_on_file.h"
 
 #define REGISTER_METHOD(name, class) { \
   methods_[NPN_GetStringIdentifier(name)] = \
@@ -33,6 +36,11 @@ nsScriptableObjectSimpleIO::~nsScriptableObjectSimpleIO(void) {
   if (thread_.get()) {
     thread_->Stop();
   }
+
+  if (nullptr != listen_on_file_method_.get()) {
+    listen_on_file_method_->Terminate();
+    listen_on_file_method_.reset();
+  }
 }
 
 bool nsScriptableObjectSimpleIO::Init() {
@@ -41,6 +49,8 @@ bool nsScriptableObjectSimpleIO::Init() {
   REGISTER_METHOD("isDirectory", PluginMethodIsDirectory);
   REGISTER_METHOD("getTextFile", PluginMethodGetTextFile);
   REGISTER_METHOD("getBinaryFile", PluginMethodGetBinaryFile);
+
+  listen_on_file_method_.reset(new PluginMethodListenOnFile(this, npp_));
 #pragma endregion public methods
 
 #pragma region read-only properties
@@ -77,6 +87,11 @@ bool nsScriptableObjectSimpleIO::HasMethod(NPIdentifier name) {
   NPN_MemFree((void*)name_utf8);
 #endif
 
+  // listenOnFile
+  if (listen_on_file_method_->HasMethod(name)) {
+    return true;
+  }
+
   // does the method exist?
   return (methods_.find(name) != methods_.end());
 }
@@ -90,6 +105,11 @@ bool nsScriptableObjectSimpleIO::Invoke(
       NPUTF8* szName = NPN_UTF8FromIdentifier(name);
       NPN_MemFree((void*)szName);
 #endif
+
+  // handle listenOnFile
+  if (listen_on_file_method_->HasMethod(name)) {
+    return listen_on_file_method_->Execute(args, argCount, result);
+  }
 
   // dispatch method to appropriate handler
   MethodsMap::iterator iter = methods_.find(name);
@@ -153,7 +173,6 @@ bool nsScriptableObjectSimpleIO::SetProperty(
   NPN_SetException(this, "this property is read-only!");
   return true;
 }
-
 
 /************************************************************************/
 /*

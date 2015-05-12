@@ -34,22 +34,31 @@
     <ClCompile Include="utils\Encoders.cpp">
       <Filter>Source Files\utils</Filter>
     </ClCompile>
-    <ClCompile Include="plugin_method.cpp">
+    <ClCompile Include="utils\TxtFileStream.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\Event.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="plugin_methods\plugin_method_get_file_times.cpp">
       <Filter>Source Files\plugin_methods</Filter>
     </ClCompile>
-    <ClCompile Include="plugin_method_get_text_file.cpp">
+    <ClCompile Include="plugin_methods\plugin_method_get_text_file.cpp">
       <Filter>Source Files\plugin_methods</Filter>
     </ClCompile>
-    <ClCompile Include="plugin_method_get_binary_file.cpp">
+    <ClCompile Include="plugin_methods\plugin_method_is_directory.cpp">
       <Filter>Source Files\plugin_methods</Filter>
     </ClCompile>
-    <ClCompile Include="plugin_method_is_directory.cpp">
+    <ClCompile Include="plugin_methods\plugin_method_listen_on_file.cpp">
       <Filter>Source Files\plugin_methods</Filter>
     </ClCompile>
-    <ClCompile Include="plugin_method_file_exists.cpp">
+    <ClCompile Include="plugin_methods\plugin_method.cpp">
       <Filter>Source Files\plugin_methods</Filter>
     </ClCompile>
-    <ClCompile Include="plugin_method_get_file_times.cpp">
+    <ClCompile Include="plugin_methods\plugin_method_file_exists.cpp">
+      <Filter>Source Files\plugin_methods</Filter>
+    </ClCompile>
+    <ClCompile Include="plugin_methods\plugin_method_get_binary_file.cpp">
       <Filter>Source Files\plugin_methods</Filter>
     </ClCompile>
   </ItemGroup>
@@ -79,22 +88,34 @@
     <ClInclude Include="utils\Encoders.h">
       <Filter>Header Files\utils</Filter>
     </ClInclude>
-    <ClInclude Include="plugin_method.h">
+    <ClInclude Include="utils\TxtFileStream.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\Event.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\ScopedHandle.h">
+      <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="plugin_methods\plugin_method_get_text_file.h">
       <Filter>Header Files\plugin_methods</Filter>
     </ClInclude>
-    <ClInclude Include="plugin_method_get_text_file.h">
+    <ClInclude Include="plugin_methods\plugin_method_is_directory.h">
       <Filter>Header Files\plugin_methods</Filter>
     </ClInclude>
-    <ClInclude Include="plugin_method_get_binary_file.h">
+    <ClInclude Include="plugin_methods\plugin_method_listen_on_file.h">
       <Filter>Header Files\plugin_methods</Filter>
     </ClInclude>
-    <ClInclude Include="plugin_method_file_exists.h">
+    <ClInclude Include="plugin_methods\plugin_method.h">
       <Filter>Header Files\plugin_methods</Filter>
     </ClInclude>
-    <ClInclude Include="plugin_method_is_directory.h">
+    <ClInclude Include="plugin_methods\plugin_method_file_exists.h">
       <Filter>Header Files\plugin_methods</Filter>
     </ClInclude>
-    <ClInclude Include="plugin_method_get_file_times.h">
+    <ClInclude Include="plugin_methods\plugin_method_get_binary_file.h">
+      <Filter>Header Files\plugin_methods</Filter>
+    </ClInclude>
+    <ClInclude Include="plugin_methods\plugin_method_get_file_times.h">
       <Filter>Header Files\plugin_methods</Filter>
     </ClInclude>
   </ItemGroup>
