@@ -5,7 +5,7 @@
 #ifndef PLUGIN_METHODS_PLUGIN_METHOD_H_
 #define PLUGIN_METHODS_PLUGIN_METHOD_H_
 
-#include "nsScriptableObjectBase.h"
+#include <nsScriptableObjectBase.h>
 
 class PluginMethod {
 public:
