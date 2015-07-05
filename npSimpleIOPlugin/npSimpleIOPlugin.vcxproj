@@ -150,6 +150,7 @@
     <ClCompile Include="plugin_methods\plugin_method_get_text_file.cpp" />
     <ClCompile Include="plugin_methods\plugin_method_is_directory.cpp" />
     <ClCompile Include="plugin_methods\plugin_method_listen_on_file.cpp" />
+    <ClCompile Include="plugin_methods\plugin_method_write_localappdata_file.cpp" />
     <ClCompile Include="utils\CriticalSectionLock.cpp" />
     <ClCompile Include="utils\Encoders.cpp" />
     <ClCompile Include="utils\Event.cpp" />
@@ -175,6 +176,7 @@
     <ClInclude Include="plugin_methods\plugin_method_get_text_file.h" />
     <ClInclude Include="plugin_methods\plugin_method_is_directory.h" />
     <ClInclude Include="plugin_methods\plugin_method_listen_on_file.h" />
+    <ClInclude Include="plugin_methods\plugin_method_write_localappdata_file.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="utils\CriticalSectionLock.h" />
     <ClInclude Include="utils\Encoders.h" />

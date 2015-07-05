@@ -50,6 +50,9 @@ bool nsScriptableObjectSimpleIO::Init() {
   REGISTER_METHOD("getTextFile", PluginMethodGetTextFile);
   REGISTER_METHOD("getBinaryFile", PluginMethodGetBinaryFile);
 
+  // writeLocalAppDataFile(relative_path, content)
+  REGISTER_METHOD("writeLocalAppDataFile", PluginMethodGetBinaryFile);
+
   listen_on_file_method_.reset(new PluginMethodListenOnFile(this, npp_));
 #pragma endregion public methods
 

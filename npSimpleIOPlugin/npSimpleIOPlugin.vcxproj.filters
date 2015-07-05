@@ -61,6 +61,9 @@
     <ClCompile Include="plugin_methods\plugin_method_get_binary_file.cpp">
       <Filter>Source Files\plugin_methods</Filter>
     </ClCompile>
+    <ClCompile Include="plugin_methods\plugin_method_write_localappdata_file.cpp">
+      <Filter>Source Files\plugin_methods</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils\Thread.h">
@@ -116,6 +119,9 @@
       <Filter>Header Files\plugin_methods</Filter>
     </ClInclude>
     <ClInclude Include="plugin_methods\plugin_method_get_file_times.h">
+      <Filter>Header Files\plugin_methods</Filter>
+    </ClInclude>
+    <ClInclude Include="plugin_methods\plugin_method_write_localappdata_file.h">
       <Filter>Header Files\plugin_methods</Filter>
     </ClInclude>
   </ItemGroup>
