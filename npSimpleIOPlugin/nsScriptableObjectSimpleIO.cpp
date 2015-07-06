@@ -12,6 +12,7 @@
 #include "plugin_methods/plugin_method_is_directory.h"
 #include "plugin_methods/plugin_method_get_text_file.h"
 #include "plugin_methods/plugin_method_get_binary_file.h"
+#include "plugin_methods/plugin_method_write_localappdata_file.h"
 
 #include "plugin_methods/plugin_method_listen_on_file.h"
 
@@ -49,9 +50,7 @@ bool nsScriptableObjectSimpleIO::Init() {
   REGISTER_METHOD("isDirectory", PluginMethodIsDirectory);
   REGISTER_METHOD("getTextFile", PluginMethodGetTextFile);
   REGISTER_METHOD("getBinaryFile", PluginMethodGetBinaryFile);
-
-  // writeLocalAppDataFile(relative_path, content)
-  REGISTER_METHOD("writeLocalAppDataFile", PluginMethodGetBinaryFile);
+  REGISTER_METHOD("writeLocalAppDataFile", PluginMethodWriteLocalAppDataFile);
 
   listen_on_file_method_.reset(new PluginMethodListenOnFile(this, npp_));
 #pragma endregion public methods

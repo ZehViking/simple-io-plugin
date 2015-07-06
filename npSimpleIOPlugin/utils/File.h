@@ -29,6 +29,9 @@ public:
     __int64& ref_last_access_time,
     __int64& ref_last_write_time);
 
+  static bool WriteTextFile(
+    const std::wstring& filename,
+    const std::string& content);
 }; // class File
 
 }; // namespace utils;

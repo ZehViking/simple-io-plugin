@@ -118,3 +118,36 @@ bool File::GetFileTimes(
   __int64& ref_last_write_time) {
   return false;
 }
+
+// static
+bool File::WriteTextFile(
+  const std::wstring& filename,
+  const std::string& content) {
+
+  HANDLE hFile = CreateFileW(
+    filename.c_str(),
+    GENERIC_WRITE,          // open for writing
+    FILE_SHARE_WRITE,       // share for writing
+    NULL,                  // default security
+    CREATE_ALWAYS,         // existing file only
+    FILE_ATTRIBUTE_NORMAL, // normal file
+    NULL);                 // no attr. template
+
+  if (INVALID_HANDLE_VALUE == hFile) {
+    return false;
+  }
+
+  DWORD dwWrittenBytes = 0;
+  bool status =
+    (TRUE == WriteFile(
+      hFile,
+      (void*)content.c_str(),
+      content.size(),
+      &dwWrittenBytes,
+      nullptr));
+
+
+  CloseHandle(hFile);
+
+  return status;
+}

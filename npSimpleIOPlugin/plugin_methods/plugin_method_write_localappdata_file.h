@@ -8,6 +8,8 @@ Copyright (c) 2015 Overwolf Ltd.
 #include "plugin_method.h"
 #include <string>
 
+// Create a file on the local filesystem with given text content
+// For security reasons, we only allow to write to the local-app-data folder
 class PluginMethodWriteLocalAppDataFile : public PluginMethod {
 public:
   PluginMethodWriteLocalAppDataFile(NPObject* object, NPP npp);
@@ -28,6 +30,10 @@ protected:
   std::string content_;
 
   NPObject* callback_;
+
+  // callback values
+  bool status_;
+  std::string message_;
 };
 
 

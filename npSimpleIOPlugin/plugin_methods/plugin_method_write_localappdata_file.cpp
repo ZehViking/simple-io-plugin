@@ -3,26 +3,28 @@
 #include "utils/File.h"
 #include "utils/Encoders.h"
 
-// fileExists( filename, callback(status) )
-/*PluginMethodFileExists::PluginMethodFileExists(NPObject* object, NPP npp) : 
+// writeLocalAppDataFile( filename, content, callback(status, message) )
+PluginMethodWriteLocalAppDataFile::PluginMethodWriteLocalAppDataFile(
+  NPObject* object, NPP npp) :
   PluginMethod(object, npp) {
 }
 
 //virtual 
-PluginMethod* PluginMethodFileExists::Clone(
+PluginMethod* PluginMethodWriteLocalAppDataFile::Clone(
   NPObject* object, 
   NPP npp, 
   const NPVariant *args, 
   uint32_t argCount, 
   NPVariant *result) {
 
-  PluginMethodFileExists* clone = 
-    new PluginMethodFileExists(object, npp);
+  PluginMethodWriteLocalAppDataFile* clone =
+    new PluginMethodWriteLocalAppDataFile(object, npp);
 
   try {
-    if (argCount < 2 ||
+    if (argCount < 3 ||
       !NPVARIANT_IS_STRING(args[0]) ||
-      !NPVARIANT_IS_OBJECT(args[1])) {
+      !NPVARIANT_IS_STRING(args[1]) ||
+      !NPVARIANT_IS_OBJECT(args[2])) {
       NPN_SetException(
         __super::object_, 
         "invalid params passed to function");
@@ -30,7 +32,7 @@ PluginMethod* PluginMethodFileExists::Clone(
       return nullptr;
     }
 
-    clone->callback_ = NPVARIANT_TO_OBJECT(args[1]);
+    clone->callback_ = NPVARIANT_TO_OBJECT(args[2]);
     // add ref count to callback object so it won't delete
     NPN_RetainObject(clone->callback_);
 
@@ -38,6 +40,10 @@ PluginMethod* PluginMethodFileExists::Clone(
     clone->filename_.append(
       NPVARIANT_TO_STRING(args[0]).UTF8Characters,
       NPVARIANT_TO_STRING(args[0]).UTF8Length);
+
+    clone->content_.append(
+      NPVARIANT_TO_STRING(args[1]).UTF8Characters,
+      NPVARIANT_TO_STRING(args[1]).UTF8Length);
 
     return clone;
   } catch(...) {
@@ -49,33 +55,59 @@ PluginMethod* PluginMethodFileExists::Clone(
 }
 
 // virtual
-bool PluginMethodFileExists::HasCallback() {
+bool PluginMethodWriteLocalAppDataFile::HasCallback() {
   return (nullptr != callback_);
 }
 
 // virtual
-void PluginMethodFileExists::Execute() {
+void PluginMethodWriteLocalAppDataFile::Execute() {
+  message_.clear();
+  
   std::wstring wide_filename = utils::Encoders::utf8_decode(filename_);
 
-  exists_ = utils::File::DoesFileExist(wide_filename);
+  // make sure there are no .. tricks
+  if (std::wstring::npos != wide_filename.find(L"..")) {
+    status_ = false;
+    message_ = "can't use \"..\" in the filename parameter";
+    return;
+  }
+
+  std::wstring path = utils::File::GetSpecialFolderWide(CSIDL_LOCAL_APPDATA);
+  std::wstring filename = path + L"\\" + wide_filename;
+
+  try {
+    status_ = utils::File::WriteTextFile(filename, content_);
+  } catch(...) {
+    status_ = false;
+  }
+
+  if (!status_) {
+    message_ = "unexpected error when trying to write to ";
+    message_ += utils::Encoders::utf8_encode(filename);
+  }
 }
 
 // virtual
-void PluginMethodFileExists::TriggerCallback() {
-  NPVariant arg;
+void PluginMethodWriteLocalAppDataFile::TriggerCallback() {
+  NPVariant args[2];
   NPVariant ret_val;
 
   BOOLEAN_TO_NPVARIANT(
-    exists_,
-    arg);
+    status_,
+    args[0]);
+
+  STRINGN_TO_NPVARIANT(
+    message_.c_str(),
+    message_.size(),
+    args[1]);
 
   // fire callback
   NPN_InvokeDefault(
-    __super::npp_, 
-    callback_, 
-    &arg, 
-    1, 
+    npp_,
+    callback_,
+    args,
+    2,
     &ret_val);
 
   NPN_ReleaseVariantValue(&ret_val);
-}*/
+}
