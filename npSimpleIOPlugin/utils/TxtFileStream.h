@@ -15,6 +15,7 @@ namespace utils {
 class TxtFileStreamDelegate {
 public:
   virtual void OnNewLine(const char* line, unsigned int len) = 0;
+  virtual void OnError(const char* message, unsigned int len) = 0;
 };
 
 class TxtFileStream {
@@ -33,6 +34,7 @@ public:
 
 private:
   void ParseLines(const char* lines, int len);
+  long GetFileSize();
 
 private:
   int file_handle_;

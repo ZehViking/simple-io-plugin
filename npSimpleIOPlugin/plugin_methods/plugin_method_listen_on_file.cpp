@@ -60,6 +60,31 @@ void PluginMethodListenOnFile::OnNewLine(const char* line, unsigned int len) {
   NPN_ReleaseVariantValue(&ret_val);
 }
 
+//virtual 
+void PluginMethodListenOnFile::OnError(const char* message, unsigned int len) {
+  NPVariant args[2];
+  NPVariant ret_val;
+
+  BOOLEAN_TO_NPVARIANT(
+    false,
+    args[0]);
+
+  STRINGN_TO_NPVARIANT(
+    message,
+    len,
+    args[1]);
+
+  // fire callback
+  NPN_InvokeDefault(
+    npp_,
+    callback_,
+    args,
+    2,
+    &ret_val);
+
+  NPN_ReleaseVariantValue(&ret_val);
+}
+
 
 bool PluginMethodListenOnFile::HasMethod(NPIdentifier name) {
   static NPIdentifier id_listen_on_file =

@@ -32,6 +32,7 @@ public:
 
 public:
   virtual void OnNewLine(const char* line, unsigned int len);
+  virtual void OnError(const char* message, unsigned int len);
 
 public:
   bool HasMethod(NPIdentifier name);

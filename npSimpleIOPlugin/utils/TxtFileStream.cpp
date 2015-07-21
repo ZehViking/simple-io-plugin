@@ -5,12 +5,17 @@ Copyright (c) 2015 Overwolf Ltd.
 #include "TxtFileStream.h"
 #include <io.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 
 using namespace utils;
 
 // leverage sequential blocks
 const unsigned int kBufferSize = 1024 * 1024 * 2;
 const unsigned int kWaitTimeout = 100;
+const char kErrorFileNotAccessible[] = "file no longer accessible";
+const char kErrorFileReadRetError[] = "file read returned error";
+const char kErrorListenThreadStopped[] = "listening thread stopped - did you call listenOnFile again?";
+const char kErrorFileTruncated[] = "the file was truncated - please restart the listener";
 
 namespace utils {
 
@@ -80,6 +85,7 @@ bool TxtFileStream::Initialize(
   return (-1 != file_handle_);
 }
 
+
 bool TxtFileStream::StartListening() {
   if (listening_) {
     return false;
@@ -101,21 +107,47 @@ bool TxtFileStream::StartListening() {
   char* buffer = new char[buffer_size];
 
   int len = 0;
+  
+  
+  long current_file_len = GetFileSize();
 
-  while (len >= 0) {
+  while ((len >= 0) && (current_file_len >= 0)) {
     {
       CriticalSectionLock lock(critical_section_);
       if (-1 == file_handle_) {
+        delegate_->OnError(
+          kErrorFileNotAccessible, 
+          sizeof(kErrorFileNotAccessible));
         break;
       }
 
       len = safe_read(file_handle_, buffer, buffer_size);
-      //len = _fread_nolock(buffer, 1, buffer_size, file_handle_);
+      if (len < 0) {
+        delegate_->OnError(
+          kErrorFileReadRetError,
+          sizeof(kErrorFileReadRetError));
+        break;
+      }
+
+      long size_change = GetFileSize();
+      if (size_change < current_file_len) {
+        // the file was truncated?
+        delegate_->OnError(
+          kErrorFileTruncated,
+          sizeof(kErrorFileTruncated));
+        break;
+      }
+      
+      current_file_len = size_change;
+      
       ParseLines(buffer, len);
     }
 
     if (0 == len) {
       if (reset_event_.Wait(kWaitTimeout)) {
+        delegate_->OnError(
+          kErrorListenThreadStopped,
+          sizeof(kErrorListenThreadStopped));
         break; // it means we were signaled
       }
     }
@@ -187,4 +219,18 @@ void TxtFileStream::ParseLines(const char* lines, int len) {
       accumulated_line_.append(start_line, &lines[len]);
     }
   }
+}
+
+long TxtFileStream::GetFileSize() {
+  struct _stat file_info;
+  
+  if (-1 == file_handle_) {
+    return -1;
+  }
+
+  if (0 != _fstat(file_handle_, &file_info)) {
+    return -1;
+  }
+
+  return file_info.st_size;
 }
