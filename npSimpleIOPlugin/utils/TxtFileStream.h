@@ -33,6 +33,11 @@ public:
   bool StopListening();
 
 private:
+  bool ReadNext(
+    int &len,
+    char* buffer,
+    int buffer_size,
+    long &current_file_len);
   void ParseLines(const char* lines, int len);
   long GetFileSize();
 

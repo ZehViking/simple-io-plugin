@@ -16,6 +16,8 @@ const char kErrorFileNotAccessible[] = "file no longer accessible";
 const char kErrorFileReadRetError[] = "file read returned error";
 const char kErrorListenThreadStopped[] = "listening thread stopped - did you call listenOnFile again?";
 const char kErrorFileTruncated[] = "the file was truncated - please restart the listener";
+const char kErrorExceptionInListener[] = "exception caught in listener thread - please restart the listener";
+const char kInfoListenThreadExit[] = "listener thread exited";
 
 namespace utils {
 
@@ -35,7 +37,7 @@ unsigned int safe_read(int desc, void *ptr, size_t len) {
   return n_chars;
 }
 
-};
+}; // utils
 
 TxtFileStream::TxtFileStream() :
   file_handle_(-1),
@@ -106,51 +108,45 @@ bool TxtFileStream::StartListening() {
   int buffer_size = kBufferSize;
   char* buffer = new char[buffer_size];
 
-  int len = 0;
-  
-  
+  int len = 0; 
   long current_file_len = GetFileSize();
+  bool was_error_triggered = false;
 
   while ((len >= 0) && (current_file_len >= 0)) {
     {
+      
       CriticalSectionLock lock(critical_section_);
-      if (-1 == file_handle_) {
-        delegate_->OnError(
-          kErrorFileNotAccessible, 
-          sizeof(kErrorFileNotAccessible));
+      
+      if (!ReadNext(
+        len, 
+        buffer, 
+        buffer_size, 
+        current_file_len)) {
+        // ReadNext will always trigger an error if returns false
+        was_error_triggered = true;
         break;
       }
 
-      len = safe_read(file_handle_, buffer, buffer_size);
-      if (len < 0) {
-        delegate_->OnError(
-          kErrorFileReadRetError,
-          sizeof(kErrorFileReadRetError));
-        break;
-      }
+    } // CriticalSectionLock
 
-      long size_change = GetFileSize();
-      if (size_change < current_file_len) {
-        // the file was truncated?
-        delegate_->OnError(
-          kErrorFileTruncated,
-          sizeof(kErrorFileTruncated));
-        break;
-      }
-      
-      current_file_len = size_change;
-      
-      ParseLines(buffer, len);
-    }
 
     if (0 == len) {
       if (reset_event_.Wait(kWaitTimeout)) {
         delegate_->OnError(
           kErrorListenThreadStopped,
           sizeof(kErrorListenThreadStopped));
+        was_error_triggered = true;
         break; // it means we were signaled
       }
     }
+  
+  } // while
+
+  // this is so that we don't trigger multiple errors
+  if (!was_error_triggered) {
+    delegate_->OnError(
+      kInfoListenThreadExit,
+      sizeof(kInfoListenThreadExit));
   }
 
   listening_ = false;
@@ -164,7 +160,7 @@ bool TxtFileStream::StopListening() {
   {
     CriticalSectionLock lock(critical_section_);
     if (-1 != file_handle_) {
-      close(file_handle_);
+      _close(file_handle_);
       file_handle_ = -1;
     }
   }
@@ -174,6 +170,51 @@ bool TxtFileStream::StopListening() {
 
   return true;
 }
+
+bool TxtFileStream::ReadNext(
+  int &len, 
+  char* buffer, 
+  int buffer_size, 
+  long &current_file_len) {
+  
+  __try {
+    if (-1 == file_handle_) {
+      delegate_->OnError(
+        kErrorFileNotAccessible,
+        sizeof(kErrorFileNotAccessible));
+      return false;
+    }
+
+
+    len = safe_read(file_handle_, buffer, buffer_size);
+    if (len < 0) {
+      delegate_->OnError(
+        kErrorFileReadRetError,
+        sizeof(kErrorFileReadRetError));
+      return false;
+    }
+
+    long size_change = GetFileSize();
+    if (size_change < current_file_len) {
+      // the file was truncated?
+      delegate_->OnError(
+        kErrorFileTruncated,
+        sizeof(kErrorFileTruncated));
+      return false;
+    }
+
+    current_file_len = size_change;
+
+    ParseLines(buffer, len);
+    return true;
+  } __except (EXCEPTION_EXECUTE_HANDLER) {
+    delegate_->OnError(
+      kErrorExceptionInListener,
+      sizeof(kErrorExceptionInListener));
+    return false;
+  }
+}
+
 
 void TxtFileStream::ParseLines(const char* lines, int len) {
   if ((nullptr == lines) || (0 == len)) {
