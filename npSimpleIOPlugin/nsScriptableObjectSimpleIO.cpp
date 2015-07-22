@@ -110,7 +110,7 @@ bool nsScriptableObjectSimpleIO::Invoke(
 
   // handle listenOnFile
   if (listen_on_file_method_->HasMethod(name)) {
-    return listen_on_file_method_->Execute(args, argCount, result);
+    return listen_on_file_method_->Execute(name, args, argCount, result);
   }
 
   // dispatch method to appropriate handler

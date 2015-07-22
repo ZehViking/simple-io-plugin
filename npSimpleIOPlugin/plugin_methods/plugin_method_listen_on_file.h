@@ -19,6 +19,7 @@ class PluginMethodListenOnFile : public PluginMethod,
 public:
   PluginMethodListenOnFile(NPObject* object, NPP npp);
 
+// PluginMethod
 public:
   virtual PluginMethod* Clone(
     NPObject* object, 
@@ -30,6 +31,7 @@ public:
   virtual void Execute();
   virtual void TriggerCallback();
 
+// utils::TxtFileStreamDelegate
 public:
   virtual void OnNewLine(const char* line, unsigned int len);
   virtual void OnError(const char* message, unsigned int len);
@@ -37,6 +39,7 @@ public:
 public:
   bool HasMethod(NPIdentifier name);
   bool Execute(
+    NPIdentifier name,
     const NPVariant *args,
     uint32_t argCount,
     NPVariant *result);
@@ -46,12 +49,23 @@ public:
 private:
   void StartListening();
 
+  bool ExecuteListenOnFile(
+    const NPVariant *args,
+    uint32_t argCount,
+    NPVariant *result);
+  bool ExecuteStopFileListen(
+    const NPVariant *args,
+    uint32_t argCount,
+    NPVariant *result);
+
 protected:
   NPObject* callback_;
 
   std::auto_ptr<utils::Thread> thread_;
   utils::TxtFileStream file_stream_;
 
+  NPIdentifier id_listen_on_file_;
+  NPIdentifier id_stop_file_listen_;
 };
 
 #endif // PLUGIN_METHODS_PLUGIN_METHOD_LISTEN_ON_FILE_H_

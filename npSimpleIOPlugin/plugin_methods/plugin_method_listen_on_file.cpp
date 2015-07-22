@@ -5,10 +5,18 @@
 #include <utils/Thread.h>
 
 const char kListenOnFileMethodName[] = "listenOnFile";
+const char kStopFileListenMethodName[] = "stopFileListen";
 
 // listenOnFile( filename, skipToEnd, callback(status, data) )
 PluginMethodListenOnFile::PluginMethodListenOnFile(NPObject* object, NPP npp) :
   PluginMethod(object, npp) {
+
+  id_listen_on_file_ =
+    NPN_GetStringIdentifier(kListenOnFileMethodName);
+
+  id_stop_file_listen_ =
+    NPN_GetStringIdentifier(kStopFileListenMethodName);
+
 }
 
 //virtual 
@@ -87,9 +95,11 @@ void PluginMethodListenOnFile::OnError(const char* message, unsigned int len) {
 
 
 bool PluginMethodListenOnFile::HasMethod(NPIdentifier name) {
-  static NPIdentifier id_listen_on_file =
-    NPN_GetStringIdentifier(kListenOnFileMethodName);
-  if (name == id_listen_on_file) {
+  if (name == id_listen_on_file_) {
+    return true;
+  }
+
+  if (name == id_stop_file_listen_) {
     return true;
   }
 
@@ -97,10 +107,39 @@ bool PluginMethodListenOnFile::HasMethod(NPIdentifier name) {
 }
 
 bool PluginMethodListenOnFile::Execute(
+  NPIdentifier name,
   const NPVariant *args,
   uint32_t argCount,
   NPVariant *result) {
 
+  if (name == id_listen_on_file_) {
+    return ExecuteListenOnFile(args, argCount, result);
+  }
+
+  if (name == id_stop_file_listen_) {
+    return ExecuteStopFileListen(args, argCount, result);
+  }
+
+  return false;
+}
+
+bool PluginMethodListenOnFile::Terminate() {
+  file_stream_.StopListening();
+
+  if (nullptr != thread_.get()) {
+    thread_->Stop();
+  }
+  return true;
+}
+
+void PluginMethodListenOnFile::StartListening() {
+  file_stream_.StartListening();
+}
+
+bool PluginMethodListenOnFile::ExecuteListenOnFile(
+  const NPVariant *args,
+  uint32_t argCount,
+  NPVariant *result) {
   std::string filename;
   bool skip_to_end = false;
 
@@ -110,7 +149,7 @@ bool PluginMethodListenOnFile::Execute(
       !NPVARIANT_IS_BOOLEAN(args[1]) ||
       !NPVARIANT_IS_OBJECT(args[2])) {
       NPN_SetException(
-        __super::object_, 
+        object_, 
         "invalid or missing params passed to function - expecting 3 params: "
         "filename, skipToEnd, callback(status, data)");
       return false;
@@ -154,15 +193,10 @@ bool PluginMethodListenOnFile::Execute(
     this));
 }
 
-bool PluginMethodListenOnFile::Terminate() {
-  file_stream_.StopListening();
+bool PluginMethodListenOnFile::ExecuteStopFileListen(
+  const NPVariant *args,
+  uint32_t argCount,
+  NPVariant *result) {
 
-  if (nullptr != thread_.get()) {
-    thread_->Stop();
-  }
-  return true;
-}
-
-void PluginMethodListenOnFile::StartListening() {
-  file_stream_.StartListening();
+  return file_stream_.StopListening();
 }
