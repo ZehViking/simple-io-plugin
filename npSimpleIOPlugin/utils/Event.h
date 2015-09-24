@@ -12,6 +12,7 @@ namespace utils {
 class Event {
 public:
   Event();
+  Event(const Event& obj) {};
   virtual ~Event();
 
 public:

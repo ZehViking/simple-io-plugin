@@ -77,6 +77,10 @@ bool nsScriptableObjectSimpleIO::Init() {
   REGISTER_GET_PROPERTY("STARTMENU", CSIDL_STARTMENU);
 
   REGISTER_GET_PROPERTY("LOCALAPPDATA", CSIDL_LOCAL_APPDATA);
+
+  // DPI
+  SetDPIProperty();
+
 #pragma endregion read-only properties
 
   thread_.reset(new utils::Thread());
@@ -211,4 +215,15 @@ void nsScriptableObjectSimpleIO::ExecuteCallback(void* method) {
   plugin_method->TriggerCallback();
 
   delete plugin_method;
+}
+
+void nsScriptableObjectSimpleIO::SetDPIProperty() {
+  HDC screen = GetDC(0);
+  int dpiX = GetDeviceCaps(screen, LOGPIXELSX);
+  ReleaseDC(0, screen);
+
+  char convert[100] = { 0 };
+  sprintf_s(convert, 100, "%d", dpiX);
+
+  properties_[NPN_GetStringIdentifier("DPI")] = convert;
 }

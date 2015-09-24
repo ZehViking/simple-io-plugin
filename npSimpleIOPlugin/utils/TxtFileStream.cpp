@@ -53,11 +53,14 @@ TxtFileStream::~TxtFileStream() {
 }
 
 bool TxtFileStream::Initialize(
+  const char* id,
   const wchar_t* filename, 
   TxtFileStreamDelegate* delegate,
   bool skip_to_end) {
 
-  if ((nullptr == filename) || (nullptr == delegate)) {
+  if ((nullptr == id) ||
+      (nullptr == filename) || 
+      (nullptr == delegate)) {
     return false;
   }
 
@@ -73,6 +76,7 @@ bool TxtFileStream::Initialize(
 
   reset_event_.Reset();
 
+  id_ = id;
   delegate_ = delegate;
 
   skip_to_end_ = skip_to_end;
@@ -133,6 +137,7 @@ bool TxtFileStream::StartListening() {
     if (0 == len) {
       if (reset_event_.Wait(kWaitTimeout)) {
         delegate_->OnError(
+          id_.c_str(),
           kErrorListenThreadStopped,
           sizeof(kErrorListenThreadStopped));
         was_error_triggered = true;
@@ -145,6 +150,7 @@ bool TxtFileStream::StartListening() {
   // this is so that we don't trigger multiple errors
   if (!was_error_triggered) {
     delegate_->OnError(
+      id_.c_str(),
       kInfoListenThreadExit,
       sizeof(kInfoListenThreadExit));
   }
@@ -180,6 +186,7 @@ bool TxtFileStream::ReadNext(
   __try {
     if (-1 == file_handle_) {
       delegate_->OnError(
+        id_.c_str(),
         kErrorFileNotAccessible,
         sizeof(kErrorFileNotAccessible));
       return false;
@@ -189,6 +196,7 @@ bool TxtFileStream::ReadNext(
     len = safe_read(file_handle_, buffer, buffer_size);
     if (len < 0) {
       delegate_->OnError(
+        id_.c_str(),
         kErrorFileReadRetError,
         sizeof(kErrorFileReadRetError));
       return false;
@@ -198,6 +206,7 @@ bool TxtFileStream::ReadNext(
     if (size_change < current_file_len) {
       // the file was truncated?
       delegate_->OnError(
+        id_.c_str(),
         kErrorFileTruncated,
         sizeof(kErrorFileTruncated));
       return false;
@@ -209,6 +218,7 @@ bool TxtFileStream::ReadNext(
     return true;
   } __except (EXCEPTION_EXECUTE_HANDLER) {
     delegate_->OnError(
+      id_.c_str(),
       kErrorExceptionInListener,
       sizeof(kErrorExceptionInListener));
     return false;
@@ -238,6 +248,7 @@ void TxtFileStream::ParseLines(const char* lines, int len) {
     if (eol_len > 0) {
       accumulated_line_.append(&lines[start_line_index], &lines[i]);
       delegate_->OnNewLine(
+        id_.c_str(),
         accumulated_line_.c_str(),
         accumulated_line_.size());
       accumulated_line_.clear();
@@ -255,7 +266,7 @@ void TxtFileStream::ParseLines(const char* lines, int len) {
   // we may end up with a new line - handle it
   if (start_line != nullptr) {
     if (*start_line == '\n') {
-      delegate_->OnNewLine("", 0);
+      delegate_->OnNewLine(id_.c_str(), "", 0);
     } else if (*start_line != '\r') {
       accumulated_line_.append(start_line, &lines[len]);
     }

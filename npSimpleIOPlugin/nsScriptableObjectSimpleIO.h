@@ -38,6 +38,7 @@ public:
 private:
   void ExecuteMethod(PluginMethod* method);
   static void ExecuteCallback(void* method);
+  void SetDPIProperty();
 
 // member variables
 private:

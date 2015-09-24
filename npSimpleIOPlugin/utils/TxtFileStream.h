@@ -14,8 +14,8 @@ namespace utils {
 
 class TxtFileStreamDelegate {
 public:
-  virtual void OnNewLine(const char* line, unsigned int len) = 0;
-  virtual void OnError(const char* message, unsigned int len) = 0;
+  virtual void OnNewLine(const char* id, const char* line, unsigned int len) = 0;
+  virtual void OnError(const char* id, const char* message, unsigned int len) = 0;
 };
 
 class TxtFileStream {
@@ -25,6 +25,7 @@ public:
 
 public:
   bool Initialize(
+    const char* id,
     const wchar_t* filename, 
     TxtFileStreamDelegate* delegate,
     bool skip_to_end = false);
@@ -42,6 +43,7 @@ private:
   long GetFileSize();
 
 private:
+  std::string id_;
   int file_handle_;
   bool skip_to_end_;
   TxtFileStreamDelegate* delegate_;
