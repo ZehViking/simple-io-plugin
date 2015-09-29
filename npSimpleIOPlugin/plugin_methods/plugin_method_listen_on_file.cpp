@@ -42,7 +42,17 @@ PluginMethodListenOnFile::PluginMethodListenOnFile(NPObject* object, NPP npp) :
 }
 
 //virtual 
-void PluginMethodListenOnFile::OnNewLine(const char* id, const char* line, unsigned int len) {
+void PluginMethodListenOnFile::OnNewLine(
+  const char* id, 
+  const char* line, 
+  unsigned int len) {
+
+  TextFileIdToCallbackMap::iterator iter = ids_to_callbacks_.find(id);
+  if ((iter == ids_to_callbacks_.end()) || (nullptr == iter->second)) {
+    OutputDebugStringA("SimpleIOPlugin OnNewLine - missing callback error!");
+    return;
+  }
+
   static bool write_to_trace = WriteToTrace();
 
   if (write_to_trace) {
@@ -73,7 +83,7 @@ void PluginMethodListenOnFile::OnNewLine(const char* id, const char* line, unsig
   // fire callback
   NPN_InvokeDefault(
     npp_,
-    callback_,
+    iter->second,
     args,
     3,
     &ret_val);
@@ -82,7 +92,17 @@ void PluginMethodListenOnFile::OnNewLine(const char* id, const char* line, unsig
 }
 
 //virtual 
-void PluginMethodListenOnFile::OnError(const char* id, const char* message, unsigned int len) {
+void PluginMethodListenOnFile::OnError(
+  const char* id, 
+  const char* message, 
+  unsigned int len) {
+
+  TextFileIdToCallbackMap::iterator iter = ids_to_callbacks_.find(id);
+  if ((iter == ids_to_callbacks_.end()) || (nullptr == iter->second)) {
+    OutputDebugStringA("SimpleIOPlugin OnNewLine - missing callback error!");
+    return;
+  }
+
   static bool write_to_trace = WriteToTrace();
 
   if (write_to_trace) {
@@ -113,7 +133,7 @@ void PluginMethodListenOnFile::OnError(const char* id, const char* message, unsi
   // fire callback
   NPN_InvokeDefault(
     npp_,
-    callback_,
+    iter->second,
     args,
     3,
     &ret_val);
@@ -158,8 +178,15 @@ bool PluginMethodListenOnFile::Terminate() {
     iter->second.second.Stop();
     iter++;
   }
-
   threads_.clear();
+
+  // clear callbacks
+  TextFileIdToCallbackMap::iterator iter_callbacks = ids_to_callbacks_.begin();
+  while (iter_callbacks != ids_to_callbacks_.end()) {
+    NPN_ReleaseObject(iter_callbacks->second);
+    iter_callbacks++;
+  } 
+  ids_to_callbacks_.clear();
 
   return true;
 }
@@ -189,6 +216,7 @@ bool PluginMethodListenOnFile::ExecuteListenOnFile(
   std::string id;
   std::string filename;
   bool skip_to_end = false;
+  NPObject* callback = nullptr;
 
   try {
     if (argCount < 4 ||
@@ -203,11 +231,11 @@ bool PluginMethodListenOnFile::ExecuteListenOnFile(
       return false;
     }
 
-    callback_ = NPVARIANT_TO_OBJECT(args[3]);
+    callback = NPVARIANT_TO_OBJECT(args[3]);
     skip_to_end = NPVARIANT_TO_BOOLEAN(args[2]);
 
     // add ref count to callback object so it won't delete
-    NPN_RetainObject(callback_);
+    NPN_RetainObject(callback);
 
     id.append(
       NPVARIANT_TO_STRING(args[0]).UTF8Characters,
@@ -258,6 +286,16 @@ bool PluginMethodListenOnFile::ExecuteListenOnFile(
     return false;
   }
 
+  // set a callback
+  TextFileIdToCallbackMap::iterator iter_callback = ids_to_callbacks_.find(id);
+  if (iter_callback != ids_to_callbacks_.end()) {
+    if (nullptr != ids_to_callbacks_[id]) {
+      NPN_ReleaseObject(ids_to_callbacks_[id]);
+    }
+  }
+
+  ids_to_callbacks_[id] = callback;
+
   char* id_to_pass = new char[id.size()+1];
   strcpy(id_to_pass, id.c_str());
 
@@ -305,6 +343,14 @@ bool PluginMethodListenOnFile::ExecuteStopFileListen(
         __super::object_,
         "an unexpected error occurred - couldn't stop existing listener thread");
       return false;
+    }
+
+    threads_.erase(id);
+
+    if (nullptr != ids_to_callbacks_[id]) {
+      NPN_ReleaseObject(ids_to_callbacks_[id]);
+      ids_to_callbacks_[id] = nullptr;
+      ids_to_callbacks_.erase(id);
     }
   }
 

@@ -63,11 +63,13 @@ private:
     NPVariant *result);
 
 protected:
-  NPObject* callback_;
-
   typedef std::pair<utils::TxtFileStream, utils::Thread> TextFileThread;
   typedef std::map<std::string, TextFileThread> TextFileThreadMap;
   TextFileThreadMap threads_;
+
+  typedef std::map<std::string, NPObject*> TextFileIdToCallbackMap;
+  TextFileIdToCallbackMap ids_to_callbacks_;
+
   
   //std::auto_ptr<utils::Thread> thread_;
   //utils::TxtFileStream file_stream_;
