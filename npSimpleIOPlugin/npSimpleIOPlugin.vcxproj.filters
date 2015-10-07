@@ -64,6 +64,9 @@
     <ClCompile Include="plugin_methods\plugin_method_write_localappdata_file.cpp">
       <Filter>Source Files\plugin_methods</Filter>
     </ClCompile>
+    <ClCompile Include="utils\utils.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils\Thread.h">
@@ -123,6 +126,9 @@
     </ClInclude>
     <ClInclude Include="plugin_methods\plugin_method_write_localappdata_file.h">
       <Filter>Header Files\plugin_methods</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\utils.h">
+      <Filter>Header Files\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

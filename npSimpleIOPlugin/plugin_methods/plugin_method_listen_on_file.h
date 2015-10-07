@@ -63,7 +63,7 @@ private:
     NPVariant *result);
 
 protected:
-  typedef std::pair<utils::TxtFileStream, utils::Thread> TextFileThread;
+  typedef std::pair<utils::TxtFileStream*, utils::Thread*> TextFileThread;
   typedef std::map<std::string, TextFileThread> TextFileThreadMap;
   TextFileThreadMap threads_;
 

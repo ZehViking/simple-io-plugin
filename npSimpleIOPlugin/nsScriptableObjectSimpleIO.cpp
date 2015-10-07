@@ -159,7 +159,9 @@ bool nsScriptableObjectSimpleIO::GetProperty(
 
   PropertiesMap::iterator iter = properties_.find(name);
   if (iter == properties_.end()) {
-    NPN_SetException(this, "unknown property!?");
+    char* b = new char[6];
+    strcpy(b, "hello");
+    NPN_SetException(this, b);
     return true;
   }
 

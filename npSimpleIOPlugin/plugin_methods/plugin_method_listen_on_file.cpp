@@ -3,30 +3,11 @@
 #include <utils/File.h>
 #include <utils/Encoders.h>
 #include <utils/Thread.h>
-#include <shlwapi.h>
-#pragma comment(lib,"Shlwapi.lib")
+#include <utils/utils.h>
 
 
 const char kListenOnFileMethodName[] = "listenOnFile";
 const char kStopFileListenMethodName[] = "stopFileListen";
-
-const char kQAFlagsPath[] = "Software\\OverwolfQA";
-const char kSimpleIOTraceEnabled[] = "SimpleIOTrace";
-
-bool WriteToTrace() {
-  DWORD Value;
-  DWORD BufferSize = sizeof(DWORD);
-  LSTATUS Ret = SHRegGetValue(
-    HKEY_CURRENT_USER, 
-    kQAFlagsPath, 
-    kSimpleIOTraceEnabled, 
-    (SRRF_RT_REG_BINARY | SRRF_RT_REG_DWORD), 
-    NULL, 
-    &Value, 
-    &BufferSize);
-
-  return (Ret == ERROR_SUCCESS && BufferSize == sizeof(DWORD) && Value != 0);
-}
 
 // listenOnFile("id", filename, skipToEnd, callback(id, status, data) )
 // stopFileListen("id" )
@@ -53,7 +34,7 @@ void PluginMethodListenOnFile::OnNewLine(
     return;
   }
 
-  static bool write_to_trace = WriteToTrace();
+  static bool write_to_trace = utils::ShouldWriteToTrace();
 
   if (write_to_trace) {
     std::string str = "SimpleIOPlugin OnNewLine - [";
@@ -103,7 +84,7 @@ void PluginMethodListenOnFile::OnError(
     return;
   }
 
-  static bool write_to_trace = WriteToTrace();
+  static bool write_to_trace = utils::ShouldWriteToTrace();
 
   if (write_to_trace) {
     std::string str = "SimpleIOPlugin OnError - [";
@@ -174,8 +155,12 @@ bool PluginMethodListenOnFile::Execute(
 bool PluginMethodListenOnFile::Terminate() {
   TextFileThreadMap::iterator iter = threads_.begin();
   while (iter != threads_.end()) {
-    iter->second.first.StopListening();
-    iter->second.second.Stop();
+    iter->second.first->StopListening();
+    iter->second.second->Stop();
+
+	delete iter->second.first;
+	delete iter->second.second;
+
     iter++;
   }
   threads_.clear();
@@ -192,18 +177,59 @@ bool PluginMethodListenOnFile::Terminate() {
 }
 
 void PluginMethodListenOnFile::StartListening(const char* id) {
+
+  static bool write_to_trace = utils::ShouldWriteToTrace();
+  if (write_to_trace) {
+    char convert[1024];
+    sprintf_s(
+      convert,
+      1024,
+      "SimpleIOPlugin StartListening - [Thread: 0x%x] [Id: %s]",
+      GetCurrentThreadId(),
+      id);
+    OutputDebugStringA(convert);
+  }
+
   TextFileThreadMap::iterator iter = threads_.find(id);
   if (iter == threads_.end()) {
-    OutputDebugStringA(
-      "PluginMethodListenOnFile::StartListening - bad id passed!");
+    if (write_to_trace) {
+      char convert[1024];
+      sprintf_s(
+        convert,
+        1024,
+        "SimpleIOPlugin StartListening ERROR - [Thread: 0x%x] [Id: %s] bad id passed",
+        GetCurrentThreadId(),
+        id);
+      OutputDebugStringA(convert);
+    }
     delete[] id;
     return; //??
   }
 
-  if (!iter->second.first.StartListening()) {
-    OutputDebugStringA(
-      "PluginMethodListenOnFile::StartListening - failed to StartListening");
+  if (!iter->second.first->StartListening()) {
+    if (write_to_trace) {
+      char convert[1024];
+      sprintf_s(
+        convert,
+        1024,
+        "SimpleIOPlugin StartListening ERROR - [Thread: 0x%x] [Id: %s] failed to StartListening",
+        GetCurrentThreadId(),
+        id);
+      OutputDebugStringA(convert);
+    }
   }
+
+  if (write_to_trace) {
+    char convert[1024];
+    sprintf_s(
+      convert,
+      1024,
+      "SimpleIOPlugin StartListening - [Thread: 0x%x] [Id: %s] StartListening Thread exiting",
+      GetCurrentThreadId(),
+      id);
+    OutputDebugStringA(convert);
+  }
+
 
   delete[] id;
 }
@@ -251,14 +277,14 @@ bool PluginMethodListenOnFile::ExecuteListenOnFile(
 
   TextFileThreadMap::iterator iter = threads_.find(id);
   if (iter != threads_.end()) {
-    if (!iter->second.first.StopListening()) {
+    if (!iter->second.first->StopListening()) {
       NPN_SetException(
         __super::object_,
         "an unexpected error occurred - couldn't stop existing listener");
       return false;
     }
     
-    if (!iter->second.second.Stop()) {
+    if (!iter->second.second->Stop()) {
       NPN_SetException(
         __super::object_,
         "an unexpected error occurred - couldn't stop existing listener thread");
@@ -267,7 +293,11 @@ bool PluginMethodListenOnFile::ExecuteListenOnFile(
   }
 
   std::wstring wide_filename = utils::Encoders::utf8_decode(filename);
-  if (!threads_[id].first.Initialize(
+  threads_.insert(
+    std::pair<std::string, TextFileThread>(
+      id, 
+      TextFileThread(new utils::TxtFileStream, new utils::Thread)));
+  if (!threads_[id].first->Initialize(
     id.c_str(),
     wide_filename.c_str(), 
     this, 
@@ -277,9 +307,8 @@ bool PluginMethodListenOnFile::ExecuteListenOnFile(
       "an unexpected error occurred - couldn't open the file for read access");
     return false;
   }
-
   
-  if (!threads_[id].second.Start()) {
+  if (!threads_[id].second->Start()) {
     NPN_SetException(
       __super::object_,
       "an unexpected error occurred - couldn't start file listening thread");
@@ -299,7 +328,7 @@ bool PluginMethodListenOnFile::ExecuteListenOnFile(
   char* id_to_pass = new char[id.size()+1];
   strcpy(id_to_pass, id.c_str());
 
-  return threads_[id].second.PostTask(
+  return threads_[id].second->PostTask(
     std::bind(
     &PluginMethodListenOnFile::StartListening,
     this,
@@ -331,19 +360,22 @@ bool PluginMethodListenOnFile::ExecuteStopFileListen(
 
   TextFileThreadMap::iterator iter = threads_.find(id);
   if (iter != threads_.end()) {
-    if (!iter->second.first.StopListening()) {
+    if (!iter->second.first->StopListening()) {
       NPN_SetException(
         __super::object_,
         "an unexpected error occurred - couldn't stop existing listener");
       return false;
     }
 
-    if (!iter->second.second.Stop()) {
+    if (!iter->second.second->Stop()) {
       NPN_SetException(
         __super::object_,
         "an unexpected error occurred - couldn't stop existing listener thread");
       return false;
     }
+
+	delete iter->second.first;
+	delete iter->second.second;
 
     threads_.erase(id);
 

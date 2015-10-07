@@ -6,6 +6,7 @@ Copyright (c) 2015 Overwolf Ltd.
 #include <io.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <utils/utils.h>
 
 using namespace utils;
 
@@ -93,6 +94,8 @@ bool TxtFileStream::Initialize(
 
 
 bool TxtFileStream::StartListening() {
+  static bool write_to_trace = utils::ShouldWriteToTrace();
+
   if (listening_) {
     return false;
   }
@@ -128,6 +131,17 @@ bool TxtFileStream::StartListening() {
         current_file_len)) {
         // ReadNext will always trigger an error if returns false
         was_error_triggered = true;
+
+        if (write_to_trace) {
+          char convert[1024];
+          sprintf_s(
+            convert,
+            1024,
+            "SimpleIOPlugin TxtFileStream::StartListening ERROR - [Thread: 0x%x] failed to ReadNext",
+            GetCurrentThreadId());
+          OutputDebugStringA(convert);
+        }
+
         break;
       }
 
