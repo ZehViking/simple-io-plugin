@@ -159,9 +159,7 @@ bool nsScriptableObjectSimpleIO::GetProperty(
 
   PropertiesMap::iterator iter = properties_.find(name);
   if (iter == properties_.end()) {
-    char* b = new char[6];
-    strcpy(b, "hello");
-    NPN_SetException(this, b);
+    NPN_SetException(this, "unknown property");
     return true;
   }
 
@@ -219,7 +217,100 @@ void nsScriptableObjectSimpleIO::ExecuteCallback(void* method) {
   delete plugin_method;
 }
 
+bool GetRegistryKeyValue(HKEY key, const char* subkey, const char* value_name, DWORD& value) {
+  DWORD size = sizeof(DWORD);
+  if (ERROR_SUCCESS != RegGetValue(
+    key,
+    subkey,
+    value_name, 
+    RRF_RT_DWORD,
+    NULL,
+    (PVOID)&value,
+    &size)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool GetRegistryKeyValue(HKEY key, const char* subkey, const char* value_name, std::string& value) {
+  // first get the size
+  DWORD size = 0;
+  if (ERROR_SUCCESS != RegGetValue(
+    key,
+    subkey,
+    value_name,
+    RRF_RT_REG_SZ,
+    NULL,
+    NULL,
+    &size)) {
+    return false;
+  }
+
+  if (size <= 0) {
+    return false;
+  }
+
+  std::vector<char> temp_data;
+  // allocate memory
+  temp_data.resize(size);
+  if (ERROR_SUCCESS != RegGetValue(
+    key,
+    subkey,
+    value_name,
+    RRF_RT_REG_SZ,
+    NULL,
+    temp_data.data(),
+    &size)) {
+    return false;
+  }
+
+  value.assign(temp_data.begin(), temp_data.end());
+  return true;
+}
+
 void nsScriptableObjectSimpleIO::SetDPIProperty() {
+  // on windows 8 and above, according to this: 
+  // https://technet.microsoft.com/en-us/library/dn528846.aspx
+  // 
+  // we need to see if the user overrides the scaling by
+  // reading the Win8DpiScaling for 0 or 1
+  // 1 - use GetDeviceCaps LOGPIXELSX
+  // 0 - read scale from: DesktopDPIOverride where:
+  //  0 - 96
+  //  1 - 120
+  //  2 - 144
+  //  3 - 192
+  DWORD win8_dpi_scaling = 1;
+  if (GetRegistryKeyValue(
+    HKEY_CURRENT_USER, 
+    "Control Panel\\Desktop",
+    "Win8DpiScaling",
+    win8_dpi_scaling)) {
+    
+    if (0 == win8_dpi_scaling) {
+      std::string desktop_dpi_override;
+      if (GetRegistryKeyValue(
+        HKEY_CURRENT_USER,
+        "Control Panel\\Desktop",
+        "DesktopDPIOverride",
+        desktop_dpi_override)) {
+
+        properties_[NPN_GetStringIdentifier("DPI")] = "96";
+
+        if ('1' == desktop_dpi_override.at(0)) {
+          properties_[NPN_GetStringIdentifier("DPI")] = "120";
+        } else if ('2' == desktop_dpi_override.at(0)) {
+          properties_[NPN_GetStringIdentifier("DPI")] = "144";
+        } else if ('3' == desktop_dpi_override.at(0)) {
+          properties_[NPN_GetStringIdentifier("DPI")] = "192";
+        }
+
+        return;
+      }
+    }
+  }
+
   HDC screen = GetDC(0);
   int dpiX = GetDeviceCaps(screen, LOGPIXELSX);
   ReleaseDC(0, screen);
