@@ -13,6 +13,7 @@
 #include "plugin_methods/plugin_method_get_text_file.h"
 #include "plugin_methods/plugin_method_get_binary_file.h"
 #include "plugin_methods/plugin_method_write_localappdata_file.h"
+#include "plugin_methods/plugin_method_get_monitor_dpi.h"
 
 #include "plugin_methods/plugin_method_listen_on_file.h"
 
@@ -51,6 +52,7 @@ bool nsScriptableObjectSimpleIO::Init() {
   REGISTER_METHOD("getTextFile", PluginMethodGetTextFile);
   REGISTER_METHOD("getBinaryFile", PluginMethodGetBinaryFile);
   REGISTER_METHOD("writeLocalAppDataFile", PluginMethodWriteLocalAppDataFile);
+  REGISTER_METHOD("getMonitorDPI", PluginMethodGetMonitorDPI);
 
   listen_on_file_method_.reset(new PluginMethodListenOnFile(this, npp_));
 #pragma endregion public methods

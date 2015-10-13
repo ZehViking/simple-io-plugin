@@ -67,6 +67,9 @@
     <ClCompile Include="utils\utils.cpp">
       <Filter>Source Files\utils</Filter>
     </ClCompile>
+    <ClCompile Include="plugin_methods\plugin_method_get_monitor_dpi.cpp">
+      <Filter>Source Files\plugin_methods</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="utils\Thread.h">
@@ -129,6 +132,9 @@
     </ClInclude>
     <ClInclude Include="utils\utils.h">
       <Filter>Header Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="plugin_methods\plugin_method_get_monitor_dpi.h">
+      <Filter>Header Files\plugin_methods</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
