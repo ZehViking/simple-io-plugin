@@ -97,22 +97,26 @@ void PluginMethodGetMonitorDPI::Execute() {
     return;
   }
 
-  // 1. get and remember the current state
+  HRESULT hr = S_OK;
+  // 1. get the current state
+  // NOTE: once set, you can't reset it
   PROCESS_DPI_AWARENESS current_state;
-  if (FAILED(get_dpi_awarnss(NULL, &current_state))) {
+  if (FAILED(hr = get_dpi_awarnss(NULL, &current_state))) {
     FreeLibrary(hmod);
     return;
   }
 
   // 2. set to per-monitor-awareness
-  if (FAILED(set_dpi_awarnss(PROCESS_PER_MONITOR_DPI_AWARE))) {
-    FreeLibrary(hmod);
-    return;
+  if (PROCESS_PER_MONITOR_DPI_AWARE != current_state) {
+    if (FAILED(hr = set_dpi_awarnss(PROCESS_PER_MONITOR_DPI_AWARE))) {
+      FreeLibrary(hmod);
+      return;
+    }
   }
 
   // 3. get the monitor's DPI
   UINT dpiX, dpiY;
-  if (SUCCEEDED(get_dpi_for_monitor(
+  if (SUCCEEDED(hr = get_dpi_for_monitor(
     (HMONITOR)(uint32_t)monitor_handle_, 
     (MONITOR_DPI_TYPE)MDT_EFFECTIVE_DPI, 
     &dpiX, 
@@ -120,9 +124,6 @@ void PluginMethodGetMonitorDPI::Execute() {
     dpi_ = (uint32_t)dpiX;
     status_ = true;
   }
-
-  // 4. reset back to the original awareness
-  set_dpi_awarnss(current_state);
 
   FreeLibrary(hmod);
 }
