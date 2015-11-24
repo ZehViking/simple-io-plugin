@@ -88,3 +88,14 @@ plugin().getBinaryFile(
     }
 });
 ```
+5. writeLocalAppDataFile - Create a file on the local filesystem with given text content. For security reasons, we only allow to write to the local-app-data folder
+Note: can't append to files. This function will either create a new file or overwrite the previous one (based on implementation).
+
+```
+var filename = "/folder/file.txt";
+var content = "1234\n56768";
+plugin.writeLocalAppDataFile( filename, content, function(status, message)
+  {
+    console.log(arguments);
+  });
+```
